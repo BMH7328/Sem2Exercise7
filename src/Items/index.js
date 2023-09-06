@@ -22,7 +22,14 @@ const fetchItems = async (priority, purchased) => {
   }
 };
 
-export const deleteItem = async (item_id = "") => {
+const updateItem = async (item_id = "") => {
+  await axios({
+    method: "PUT",
+    url: "http://localhost:5000/items/" + item_id + "/purchased",
+  });
+};
+
+const deleteItem = async (item_id = "") => {
   const response = await axios({
     method: "DELETE",
     url: "http://localhost:5000/items/" + item_id,
@@ -57,7 +64,6 @@ function Items() {
         }
       });
     }
-    // console.log(options);
     return options;
   }, [memoryItems]);
 
@@ -127,48 +133,33 @@ function Items() {
       </Group>
       <Space h="20px" />
       <Group>
-        <Button
-          onClick={() => {
-            filterItem("");
+        <select
+          value={priority}
+          onChange={(event) => {
+            setPriority(event.target.value);
           }}
         >
-          All
-        </Button>
-        <Button
-          onClick={() => {
-            filterItem("Low");
+          <option value="">All priority</option>
+          {priorityOptions.map((priority) => {
+            console.log(priorityOptions);
+            return (
+              <option key={priority} value={priority}>
+                {priority}
+              </option>
+            );
+          })}
+        </select>
+
+        <select
+          value={purchased}
+          onChange={(event) => {
+            setPurchased(event.target.value);
           }}
         >
-          Low
-        </Button>
-        <Button
-          onClick={() => {
-            filterItem("Medium");
-          }}
-        >
-          Medium
-        </Button>
-        <Button
-          onClick={() => {
-            filterItem("High");
-          }}
-        >
-          High
-        </Button>
-        <Button
-          onClick={() => {
-            filterItem1("no");
-          }}
-        >
-          Not Purchased
-        </Button>
-        <Button
-          onClick={() => {
-            filterItem1("yes");
-          }}
-        >
-          Purchased
-        </Button>
+          <option value="">All purchased</option>
+          <option value="yes">Purchased</option>
+          <option value="no">Unpurchased</option>
+        </select>
       </Group>
       <Space h="20px" />
       <Grid>
@@ -210,7 +201,7 @@ function Items() {
                         size="xs"
                         radius="50px"
                         onClick={() => {
-                          updatePurchased(item._id);
+                          updateMutation.mutate(item._id);
                         }}
                       >
                         Purchased
