@@ -13,6 +13,22 @@ import {
 } from "@mantine/core";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { notifications } from "@mantine/notifications";
+import { useQuery, useMutation } from "@tanstack/react-query";
+
+const getItem = async (id) => {
+  const response = await axios.get("http://localhost:5000/items/" + id);
+  return response.data;
+};
+
+const updateItem = async ({ id, data }) => {
+  const response = await axios({
+    method: "PUT",
+    url: "http://localhost:5000/items/" + id,
+    headers: { "Content-Type": "application/json" },
+    data: data,
+  });
+  return response.data;
+};
 
 function ItemEdit() {
   const { id } = useParams();
@@ -22,58 +38,49 @@ function ItemEdit() {
   const [unit, setUnit] = useState("");
   const [priority, setPriority] = useState("");
   const [purchased, setPurchased] = useState("");
+  const { data } = useQuery({
+    queryKey: ["items", id],
+    queryFn: () => getItem(id),
+    onSuccess: (data) => {
+      setName(data.name);
+      setPriority(data.priority);
+      setUnit(data.unit);
+      setQuantity(data.quantity);
+      setPurchased(data.purchased);
+    },
+  });
 
-  useEffect(() => {
-    axios
-      .get("http://localhost:5000/items/" + id)
-      .then((response) => {
-        // set value for every fields
-        setName(response.data.name);
-        setQuantity(response.data.quantity);
-        setUnit(response.data.unit);
-        setPriority(response.data.priority);
-        setPurchased(response.data.purchased);
-      })
-      .catch((error) => {
-        notifications.show({
-          title: error.response.data.message,
-          color: "red",
-        });
-      });
-  }, []);
-
-  const handleUpdateItem = async (event) => {
-    event.preventDefault();
-    try {
-      await axios({
-        method: "PUT",
-        url: "http://localhost:5000/items/" + id,
-        headers: {
-          "Content-Type": "application/json",
-        },
-        data: JSON.stringify({
-          name: name,
-          quantity: quantity,
-          unit: unit,
-          priority: priority,
-          purchased: purchased,
-        }),
-      });
-
+  const updateMutation = useMutation({
+    mutationFn: updateItem,
+    onSuccess: () => {
       notifications.show({
         title: "Item Edited",
         color: "green",
       });
-      // redirect back to home page
+      //redirect back to home page
       navigate("/");
-    } catch (error) {
+    },
+    onError: (error) => {
       notifications.show({
         title: error.response.data.message,
         color: "red",
       });
-    }
-  };
+    },
+  });
 
+  const handleUpdateItem = async (event) => {
+    event.preventDefault();
+    updateMutation.mutate({
+      id: id,
+      data: JSON.stringify({
+        name: name,
+        quantity: quantity,
+        unit: unit,
+        priority: priority,
+        purchased: purchased,
+      }),
+    });
+  };
   return (
     <Container>
       <Space h="50px" />

@@ -13,6 +13,17 @@ import {
 } from "@mantine/core";
 import { Link, useNavigate } from "react-router-dom";
 import { notifications } from "@mantine/notifications";
+import { useQueryClient, useMutation } from "@tanstack/react-query";
+
+const addItem = async (data) => {
+  const response = await axios({
+    method: "POST",
+    url: "http://localhost:5000/items",
+    headers: { "Content-Type": "application/json" },
+    data: data,
+  });
+  return response.data;
+};
 
 function ItemAdd() {
   const navigate = useNavigate();
@@ -21,34 +32,34 @@ function ItemAdd() {
   const [unit, setUnit] = useState("");
   const [priority, setPriority] = useState("");
 
-  const handleAddNewItem = async (event) => {
-    event.preventDefault();
-    try {
-      const response = await axios({
-        method: "POST",
-        url: "http://localhost:5000/items",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        data: JSON.stringify({
-          name: name,
-          quantity: quantity,
-          unit: unit,
-          priority: priority,
-        }),
-      });
+  const createMutation = useMutation({
+    mutationFn: addItem,
+    onSuccess: () => {
       notifications.show({
         title: "Item Added",
         color: "green",
       });
-      // redirect back to home page
+
       navigate("/");
-    } catch (error) {
+    },
+    onError: (error) => {
       notifications.show({
         title: error.response.data.message,
         color: "red",
       });
-    }
+    },
+  });
+
+  const handleAddNewItem = async (event) => {
+    event.preventDefault();
+    createMutation.mutate(
+      JSON.stringify({
+        name: name,
+        quantity: quantity,
+        unit: unit,
+        priority: priority,
+      })
+    );
   };
   return (
     <Container>
